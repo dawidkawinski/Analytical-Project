@@ -1,5 +1,7 @@
 import requests
 import pandas as pd
+import os 
+from google.cloud import bigquery
 
 url = "https://api.open-meteo.com/v1/forecast"
 params = {
@@ -19,3 +21,23 @@ df = pd.DataFrame({
 })
 
 print(df.head())
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-key.json"
+
+client = bigquery.Client()
+
+table_id = "splendid-watch-512007-p6.weather_data.lublin_forecast"
+
+print("Wysyłanie danych do BigQuery...")
+
+job_config = bigquery.LoadJobConfig(
+    write_disposition="WRITE_APPEND",
+)
+
+job = client.load_table_from_dataframe(
+    df, table_id, job_config=job_config
+)
+
+job.result()
+
+print(f"Sukces! Załadowano {job.output_rows} wierszy do tabeli {table_id}.")
